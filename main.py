@@ -144,7 +144,10 @@ class AllTagsScreen(Screen):
         back_btn = BackButton()
         back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
-        layout.add_widget(Label(text=f"Choose one of the {len(tags)} tags", size_hint=(1, .2)))
+        self.number_of_tags = len(tags)
+        self.title_label = Label(text=f"Choose one of the {self.number_of_tags} tags", size_hint=(1, .2))
+        self.tags_to_search = []
+        layout.add_widget(self.title_label)
         tags_scroll_section = ScrollView()
         tags_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
@@ -154,10 +157,27 @@ class AllTagsScreen(Screen):
             btn.bind(on_release=self.bind_tag_btn)
         tags_scroll_section.add_widget(tags_grid)
         layout.add_widget(tags_scroll_section)
+        self.search_btn = Button(text="Search", size_hint=(1,.2))
+        layout.add_widget(self.search_btn)
         self.add_widget(layout)
 
     def bind_tag_btn(self, btn):
-        btn.text = "show who matches this tag"
+        if btn.text not in self.tags_to_search:
+            self.tags_to_search.append(btn.text)
+        else:
+            self.tags_to_search.remove(btn.text)
+
+        if self.tags_to_search:
+            self.search_btn.text = f"Search for {len(self.tags_to_search)} tags"
+            new_title = ""
+            for tag in self.tags_to_search:
+                new_title += f"{tag}, "
+            self.title_label.text = new_title
+        else:
+            self.title_label.text = f"Choose one of the {self.number_of_tags} tags"
+            self.search_btn.text = "Search"
+
+
 
     def back_btn_bind(self, btn):
         self.manager.go_back()

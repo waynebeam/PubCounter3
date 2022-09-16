@@ -1,4 +1,4 @@
 Later: One day maybe, take all the combined screen logic, like the back button on top, box layout, etc, and make it a like "screen template" class that the other screens inherit.
 
-Next Up: From the main screen, add the controls to the buttons so that it loads the next screens. Starting with the list of all names.
-Then make the tags list, then the tags screen
+Next Up: Make the search button on the tags screen work. This should just be importing the logic from PubCounter 2 to
+find all the matches, then I'll just create the names list screen with that list of names.
