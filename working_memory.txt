@@ -1,0 +1,4 @@
+Later: One day maybe, take all the combined screen logic, like the back button on top, box layout, etc, and make it a like "screen template" class that the other screens inherit.
+
+Next Up: From the main screen, add the controls to the buttons so that it loads the next screens. Starting with the list of all names.
+Then make the tags list, then the tags screen

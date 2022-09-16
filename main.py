@@ -33,8 +33,8 @@ class PubCounter3(App):
     def build(self):
         pubs = load_file()
         self.manager = NavigationScreenManager(pubs)
-        screen = NameScreen(pubs["ulysses ashton"])
-        return screen
+        screen = SingleNameScreen(pubs["wayne beam"])
+        return self.manager
 
 
 class NavigationScreenManager(ScreenManager):
@@ -47,7 +47,7 @@ class NavigationScreenManager(ScreenManager):
         pass
 
 
-class NameScreen(Screen):
+class SingleNameScreen(Screen):
     def __init__(self, pub: Publisher, **kwargs):
         super().__init__(**kwargs)
         self.name = "name_screen"
@@ -65,6 +65,25 @@ class NameScreen(Screen):
             tags_grid.add_widget(btn)
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
+
+
+class NameListScreen(Screen):
+    def __init__(self, names:[], **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation="vertical")
+        back_btn = Button(text="back", size_hint=(1, .2))
+        layout.add_widget(back_btn)
+        names_scroll_section = ScrollView()
+        names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
+        names_grid.bind(minimum_height=names_grid.setter("height"))
+        for name in names:
+            btn = Button(text=name.title(), size_hint_y=None, height=50)
+            names_grid.add_widget(btn)
+        names_scroll_section.add_widget(names_grid)
+        layout.add_widget(names_scroll_section)
+        self.add_widget(layout)
+
+
 
 
 if __name__ == '__main__':
