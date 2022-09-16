@@ -43,9 +43,6 @@ class NavigationScreenManager(ScreenManager):
         self.screen_stack = []
         self.publishers = pubs
 
-    def show_name_screen(self):
-        pass
-
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
         self.show_name_list_screen(names)
@@ -57,6 +54,16 @@ class NavigationScreenManager(ScreenManager):
     def show_single_name_screen(self, name: str):
         pub = self.publishers[name]
         screen = SingleNameScreen(pub)
+        self.change_screens(screen)
+
+    def show_all_tags_screen(self):
+        all_tags = []
+        for pub in self.publishers:
+            for tag in self.publishers[pub]["tags"]:
+                if tag not in all_tags:
+                    all_tags.append(tag)
+
+        screen = AllTagsScreen(all_tags)
         self.change_screens(screen)
 
     def change_screens(self, next_screen: Screen):
@@ -93,7 +100,7 @@ class SingleNameScreen(Screen):
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
 
-    def back_btn_bind(self,btn):
+    def back_btn_bind(self, btn):
         self.manager.go_back()
 
 
@@ -105,7 +112,7 @@ class BackButton(Button):
 
 
 class NameListScreen(Screen):
-    def __init__(self, names: [],list_type:str = "in all" ,**kwargs):
+    def __init__(self, names: [], list_type: str = "in all", **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation="vertical")
         back_btn = BackButton()
@@ -125,6 +132,32 @@ class NameListScreen(Screen):
 
     def bind_name_btn(self, btn):
         self.manager.show_single_name_screen(btn.text.lower())
+
+    def back_btn_bind(self, btn):
+        self.manager.go_back()
+
+
+class AllTagsScreen(Screen):
+    def __init__(self, tags: [], **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation="vertical")
+        back_btn = BackButton()
+        back_btn.bind(on_release=self.back_btn_bind)
+        layout.add_widget(back_btn)
+        layout.add_widget(Label(text=f"Choose one of the {len(tags)} tags", size_hint=(1, .2)))
+        tags_scroll_section = ScrollView()
+        tags_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
+        tags_grid.bind(minimum_height=tags_grid.setter("height"))
+        for tag in tags:
+            btn = Button(text=tag.title(), size_hint_y=None, height=50)
+            tags_grid.add_widget(btn)
+            btn.bind(on_release=self.bind_tag_btn)
+        tags_scroll_section.add_widget(tags_grid)
+        layout.add_widget(tags_scroll_section)
+        self.add_widget(layout)
+
+    def bind_tag_btn(self, btn):
+        btn.text = "show who matches this tag"
 
     def back_btn_bind(self, btn):
         self.manager.go_back()
