@@ -28,7 +28,7 @@ def load_file():
 
 
 class PubCounter3(App):
-    manger = ObjectProperty(None)
+    manager = ObjectProperty(None)
 
     def build(self):
         pubs = load_file()
@@ -46,15 +46,42 @@ class NavigationScreenManager(ScreenManager):
     def show_name_screen(self):
         pass
 
+    def show_all_names_screen(self):
+        names = [name for name in self.publishers]
+        self.show_name_list_screen(names)
+
+    def show_name_list_screen(self, names: []):
+        screen = NameListScreen(names)
+        self.change_screens(screen)
+
+    def show_single_name_screen(self, name: str):
+        pub = self.publishers[name]
+        screen = SingleNameScreen(pub)
+        self.change_screens(screen)
+
+    def change_screens(self, next_screen: Screen):
+        self.screen_stack.append(self.current_screen)
+        self.add_widget(next_screen)
+        self.transition.direction = "left"
+        self.current = next_screen.name
+
+    def go_back(self):
+        current = self.current_screen
+        self.transition.direction = "right"
+        self.current = self.screen_stack[-1].name
+        self.remove_widget(current)
+        self.screen_stack.pop()
+
 
 class SingleNameScreen(Screen):
     def __init__(self, pub: Publisher, **kwargs):
         super().__init__(**kwargs)
         self.name = "name_screen"
         layout = BoxLayout(orientation="vertical")
-        back_btn = Button(text="back", size_hint=(1,.2))
+        back_btn = BackButton()
+        back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
-        name_label = Label(text=pub["name"], size_hint=(1,.3))
+        name_label = Label(text=pub["name"], size_hint=(1, .3))
         layout.add_widget(name_label)
         tags_scroll_section = ScrollView()
         layout.add_widget(tags_scroll_section)
@@ -66,24 +93,41 @@ class SingleNameScreen(Screen):
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
 
+    def back_btn_bind(self,btn):
+        self.manager.go_back()
+
+
+class BackButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.text = "back"
+        self.size_hint = (1, .2)
+
 
 class NameListScreen(Screen):
-    def __init__(self, names:[], **kwargs):
+    def __init__(self, names: [],list_type:str = "in all" ,**kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation="vertical")
-        back_btn = Button(text="back", size_hint=(1, .2))
+        back_btn = BackButton()
+        back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
+        layout.add_widget(Label(text=f"{len(names)} Publishers {list_type}", size_hint=(1, .2)))
         names_scroll_section = ScrollView()
         names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         names_grid.bind(minimum_height=names_grid.setter("height"))
         for name in names:
             btn = Button(text=name.title(), size_hint_y=None, height=50)
             names_grid.add_widget(btn)
+            btn.bind(on_release=self.bind_name_btn)
         names_scroll_section.add_widget(names_grid)
         layout.add_widget(names_scroll_section)
         self.add_widget(layout)
 
+    def bind_name_btn(self, btn):
+        self.manager.show_single_name_screen(btn.text.lower())
 
+    def back_btn_bind(self, btn):
+        self.manager.go_back()
 
 
 if __name__ == '__main__':

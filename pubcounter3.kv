@@ -4,9 +4,10 @@
         BoxLayout:
             orientation: "vertical"
             Button:
-                text: "test"
+                text: "View All Publishers"
+                on_release: app.manager.show_all_names_screen()
             Button:
-                text: "test2"
+                text: "Lookup by Tag"
             TextInput:
                 text: "to implement later"
                 size_hint_y: .3
