@@ -42,6 +42,16 @@ class NavigationScreenManager(ScreenManager):
         super().__init__(**kwargs)
         self.screen_stack = []
         self.publishers = pubs
+        self.all_tags = self.find_all_tags()
+
+    def find_all_tags(self) -> []:
+        all_tags = []
+        for pub in self.publishers:
+            for tag in self.publishers[pub]["tags"]:
+                if tag not in all_tags:
+                    all_tags.append(tag)
+
+        return all_tags
 
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
@@ -57,13 +67,8 @@ class NavigationScreenManager(ScreenManager):
         self.change_screens(screen)
 
     def show_all_tags_screen(self):
-        all_tags = []
-        for pub in self.publishers:
-            for tag in self.publishers[pub]["tags"]:
-                if tag not in all_tags:
-                    all_tags.append(tag)
 
-        screen = AllTagsScreen(all_tags)
+        screen = AllTagsScreen(self.all_tags)
         self.change_screens(screen)
 
     def create_matching_pubs_screen(self, tags: []):
@@ -127,7 +132,7 @@ class SingleNameScreen(Screen):
     def back_btn_bind(self, btn):
         self.manager.go_back()
 
-    def bind_tag_btn(self,btn):
+    def bind_tag_btn(self, btn):
         tag = [btn.text]
         self.manager.create_matching_pubs_screen(tag)
 
