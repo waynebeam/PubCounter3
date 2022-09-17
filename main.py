@@ -119,7 +119,7 @@ class NavigationScreenManager(ScreenManager):
         self.screen_stack.pop()
 
 
-class ListScreen(Screen):
+class BasicScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout = BoxLayout(orientation="vertical")
@@ -127,9 +127,6 @@ class ListScreen(Screen):
         navigation_bar_top.back_btn.bind(on_release=self.back_btn_bind)
         self.header = BoxLayout(size_hint=(1, .2))
         self.body = BoxLayout(orientation="vertical")
-        self.body_scroller = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
-        self.body.add_widget(self.body_scroller)
-
         navigation_bar_bottom = BottomNavigationBar()
         navigation_bar_bottom.home_btn.bind(on_release=self.bind_home_btn)
         navigation_bar_bottom.tag_screen_btn.bind(on_release=self.all_tags_btn)
@@ -156,11 +153,17 @@ class ListScreen(Screen):
     def bind_name_btn(self, btn):
         self.manager.show_single_name_screen(btn.text.lower())
 
-    def all_tags_btn(self,btn):
+    def all_tags_btn(self, btn):
         self.manager.show_all_tags_screen()
 
-    def all_pubs_btn(self,btn):
+    def all_pubs_btn(self, btn):
         self.manager.show_all_names_screen()
+
+class ListScreen(BasicScreen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.body_scroller = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
+        self.body.add_widget(self.body_scroller)
 
 
 class SingleNameScreen(ListScreen):
