@@ -47,8 +47,8 @@ class NavigationScreenManager(ScreenManager):
         names = [name for name in self.publishers]
         self.show_name_list_screen(names)
 
-    def show_name_list_screen(self, names: []):
-        screen = NameListScreen(names)
+    def show_name_list_screen(self, names: [], title_decoration: str = "in all"):
+        screen = NameListScreen(names, title_decoration)
         self.change_screens(screen)
 
     def show_single_name_screen(self, name: str):
@@ -65,6 +65,28 @@ class NavigationScreenManager(ScreenManager):
 
         screen = AllTagsScreen(all_tags)
         self.change_screens(screen)
+
+    def create_matching_pubs_screen(self, tags: []):
+
+        matching_pubs = []
+        pubs = self.publishers
+        if "or" in tags:
+            for pub in pubs:
+                if pub not in matching_pubs:
+                    if any(tag.lower() in pubs[pub]["tags"] for tag in tags):
+                        matching_pubs.append(pub.title())
+        else:
+            for pub in pubs:
+                if pub not in matching_pubs:
+                    if all(tag.lower() in pubs[pub]["tags"] for tag in tags if tag != "and"):
+                        matching_pubs.append(pub.title())
+        if matching_pubs:
+            title_str = "who match " + ", ".join(tags)
+            self.show_name_list_screen(matching_pubs, title_str)
+        else:
+            pass  # just pass for now. I think This should be impossible to reach since we get here off of the
+            # select screen. So it should always be a valid list, right? But when we implement terminal we might
+            # need a check like this
 
     def change_screens(self, next_screen: Screen):
         self.screen_stack.append(self.current_screen)
@@ -88,7 +110,7 @@ class SingleNameScreen(Screen):
         back_btn = BackButton()
         back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
-        name_label = Label(text=pub["name"], size_hint=(1, .3))
+        name_label = Label(text=pub["name"].title(), size_hint=(1, .3))
         layout.add_widget(name_label)
         tags_scroll_section = ScrollView()
         layout.add_widget(tags_scroll_section)
@@ -114,12 +136,14 @@ class BackButton(Button):
 class NameListScreen(Screen):
     def __init__(self, names: [], list_type: str = "in all", **kwargs):
         super().__init__(**kwargs)
+        self.name = "namelist"
         layout = BoxLayout(orientation="vertical")
         back_btn = BackButton()
         back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
+
         layout.add_widget(Label(text=f"{len(names)} Publishers {list_type}", size_hint=(1, .2)))
-        names_scroll_section = ScrollView()
+        names_scroll_section = ScrollView(bar_width=10, bar_margin=5)
         names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         names_grid.bind(minimum_height=names_grid.setter("height"))
         for name in names:
@@ -164,8 +188,13 @@ class AllTagsScreen(Screen):
         tags_scroll_section.add_widget(tags_grid)
         layout.add_widget(tags_scroll_section)
         self.search_btn = Button(text="Search", size_hint=(1, .2), disabled=True)
+        self.search_btn.bind(on_release=self.bind_search_btn)
         layout.add_widget(self.search_btn)
         self.add_widget(layout)
+
+    def bind_search_btn(self, btn):
+
+        self.manager.create_matching_pubs_screen(self.tags_to_search)
 
     def bind_tag_btn(self, btn):
         if btn.text not in self.tags_to_search:
@@ -178,7 +207,6 @@ class AllTagsScreen(Screen):
                 elif "and" in self.tags_to_search:
                     self.tags_to_search.remove("and")
         num_tags = len(self.tags_to_search)
-        print(num_tags)
         if self.tags_to_search:
             self.search_btn.disabled = False
             if len(self.tags_to_search) > 1:
@@ -190,7 +218,7 @@ class AllTagsScreen(Screen):
                     if "and" in self.tags_to_search:
                         self.tags_to_search.remove("and")
                     self.tags_to_search.insert(-1, "and")
-            self.search_btn.text = f"Search for {num_tags-1 if num_tags >2 else num_tags} tags"
+            self.search_btn.text = f"Search for {num_tags - 1 if num_tags > 2 else num_tags} tags"
             new_title = ""
             for i, tag in enumerate(self.tags_to_search):
                 new_title += tag
@@ -220,7 +248,6 @@ class AllTagsScreen(Screen):
             self.tags_to_search.remove("and")
             self.tags_to_search.insert(-1, "or")
             self.title_label.text = str.replace(self.title_label.text, "and", "or")
-
 
 
 if __name__ == '__main__':

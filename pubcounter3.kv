@@ -3,12 +3,13 @@
         name: "main_menu_screen"
         BoxLayout:
             orientation: "vertical"
+            TextInput:
+                text: "to implement later"
+                size_hint_y: .3
             Button:
                 text: "View All Publishers"
                 on_release: app.manager.show_all_names_screen()
             Button:
                 text: "Lookup by Tag"
                 on_release: app.manager.show_all_tags_screen()
-            TextInput:
-                text: "to implement later"
-                size_hint_y: .3
+

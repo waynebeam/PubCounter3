@@ -1,4 +1,3 @@
 Later: One day maybe, take all the combined screen logic, like the back button on top, box layout, etc, and make it a like "screen template" class that the other screens inherit.
 
-Next Up: Make the search button on the tags screen work. This should just be importing the logic from PubCounter 2 to
-find all the matches, then I'll just create the names list screen with that list of names.
+NextUp: Add a layout with a scroll to bottom button next to the title on the all pubs screen
