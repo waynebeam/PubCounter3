@@ -9,6 +9,7 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from publisher import Publisher
+from kivy.metrics import dp
 import json
 
 
@@ -134,10 +135,8 @@ class ListScreen(Screen):
         result, title_str, matching_pubs = self.manager.create_matching_pubs_screen(tag)
         self.manager.show_name_list_screen(title_str, matching_pubs)
 
-
     def bind_scroll_bottom_button(self, btn):
         self.names_scroll_section.scroll_y = 0
-
 
     def bind_name_btn(self, btn):
         self.manager.show_single_name_screen(btn.text.lower())
@@ -155,7 +154,7 @@ class SingleNameScreen(ListScreen):
         tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
         for tag in pub["tags"]:
-            btn = Button(text=tag.title(), size_hint_y=None, height=50)
+            btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
         tags_scroll_section.add_widget(tags_grid)
@@ -191,7 +190,7 @@ class NameListScreen(ListScreen):
         names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         names_grid.bind(minimum_height=names_grid.setter("height"))
         for name in names:
-            btn = Button(text=name.title(), size_hint_y=None, height=50)
+            btn = Button(text=name.title(), size_hint_y=None, height=dp(50))
             names_grid.add_widget(btn)
             btn.bind(on_release=self.bind_name_btn)
         self.names_scroll_section.add_widget(names_grid)
@@ -217,7 +216,7 @@ class AllTagsScreen(ListScreen):
         tags_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
         for tag in tags:
-            btn = Button(text=tag.title(), size_hint_y=None, height=50)
+            btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
         tags_scroll_section.add_widget(tags_grid)
@@ -280,7 +279,7 @@ class AllTagsScreen(ListScreen):
     def bind_search_btn(self, btn):
         result, title_str, matching_pubs = self.manager.create_matching_pubs_screen(self.tags_to_search)
         if result:
-            self.manager.show_name_list_screen(title_str,matching_pubs)
+            self.manager.show_name_list_screen(title_str, matching_pubs)
         else:
             self.title_label.text = "No matches found"
             self.tags_to_search.clear()
