@@ -108,7 +108,28 @@ class NavigationScreenManager(ScreenManager):
         self.screen_stack.pop()
 
 
-class SingleNameScreen(Screen):
+class ListScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def back_btn_bind(self, btn):
+        self.manager.go_back()
+
+    def bind_tag_btn(self, btn):
+        tag = [btn.text]
+        self.manager.create_matching_pubs_screen(tag)
+
+    def bind_scroll_bottom_button(self, btn):
+        self.names_scroll_section.scroll_y = 0
+
+    def bind_search_btn(self, btn):
+        self.manager.create_matching_pubs_screen(self.tags_to_search)
+
+    def bind_name_btn(self, btn):
+        self.manager.show_single_name_screen(btn.text.lower())
+
+
+class SingleNameScreen(ListScreen):
     def __init__(self, pub: Publisher, **kwargs):
         super().__init__(**kwargs)
         self.name = "name_screen"
@@ -129,13 +150,6 @@ class SingleNameScreen(Screen):
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
 
-    def back_btn_bind(self, btn):
-        self.manager.go_back()
-
-    def bind_tag_btn(self, btn):
-        tag = [btn.text]
-        self.manager.create_matching_pubs_screen(tag)
-
 
 class BackButton(Button):
     def __init__(self, **kwargs):
@@ -144,7 +158,7 @@ class BackButton(Button):
         self.size_hint = (1, .2)
 
 
-class NameListScreen(Screen):
+class NameListScreen(ListScreen):
     def __init__(self, names: [], list_type: str = "in all", **kwargs):
         super().__init__(**kwargs)
         self.name = "namelist"
@@ -173,17 +187,8 @@ class NameListScreen(Screen):
         layout.add_widget(self.names_scroll_section)
         self.add_widget(layout)
 
-    def bind_name_btn(self, btn):
-        self.manager.show_single_name_screen(btn.text.lower())
 
-    def back_btn_bind(self, btn):
-        self.manager.go_back()
-
-    def bind_scroll_bottom_button(self, btn):
-        self.names_scroll_section.scroll_y = 0
-
-
-class AllTagsScreen(Screen):
+class AllTagsScreen(ListScreen):
     def __init__(self, tags: [], **kwargs):
         super().__init__(**kwargs)
         self.number_of_tags = len(tags)
@@ -213,10 +218,6 @@ class AllTagsScreen(Screen):
         self.search_btn.bind(on_release=self.bind_search_btn)
         layout.add_widget(self.search_btn)
         self.add_widget(layout)
-
-    def bind_search_btn(self, btn):
-
-        self.manager.create_matching_pubs_screen(self.tags_to_search)
 
     def bind_tag_btn(self, btn):
         if btn.text not in self.tags_to_search:
@@ -251,9 +252,6 @@ class AllTagsScreen(Screen):
             self.title_label.text = f"Choose from the {self.number_of_tags} tags"
             self.search_btn.text = "Search"
             self.search_btn.disabled = True
-
-    def back_btn_bind(self, btn):
-        self.manager.go_back()
 
     def bind_or_toggle_btn(self, btn):
         if self.search_or:
