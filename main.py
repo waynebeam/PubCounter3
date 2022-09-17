@@ -12,10 +12,11 @@ from kivy.uix.boxlayout import BoxLayout
 from publisher import Publisher
 from kivy.metrics import dp
 import json
-from kivy.config import Config
-Config.set('graphics', 'width', '500')
-Config.set('graphics', 'height', '700')
-
+# from kivy.config import Config
+# Config.set('graphics', 'width', '500')
+# Config.set('graphics', 'height', '700')
+from kivy.core.window import Window
+Window.size = (500, 700)
 
 def load_file():
     pubs = {}
