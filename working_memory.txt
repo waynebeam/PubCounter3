@@ -12,4 +12,5 @@
         If I edit Caleb, then it shows me Caleb, do I expect 'back' to take me back to editing Caleb, or the screen
         that I started from for the edit?
 
-2. Add/Delete publisher buttons on home screen. But they'll be horizontal.
+2. The basic screen is in place, so I can make other kinds of screens and put them in that shell in case they don't
+    have a big scroller in the center.
