@@ -235,7 +235,7 @@ class AllTagsScreen(ListScreen):
         self.search_or = False
 
         self.title_label = Label(text=f"Choose from the {self.number_of_tags} tags", size_hint=(.8, 1))
-        or_toggle_btn = Button(text="Matching ALL", size_hint=(.2, 1))
+        or_toggle_btn = Button(text="[AND]/or", size_hint=(.2, 1))
         or_toggle_btn.bind(on_release=self.bind_or_toggle_btn)
         self.header.add_widget(self.title_label)
         self.header.add_widget(or_toggle_btn)
@@ -288,10 +288,10 @@ class AllTagsScreen(ListScreen):
     def bind_or_toggle_btn(self, btn):
         if self.search_or:
             self.search_or = False
-            btn.text = "Matching ALL"
+            btn.text = "[AND]/or"
         else:
             self.search_or = True
-            btn.text = "Matching ANY"
+            btn.text = "and/[OR]"
         if "or" in self.tags_to_search:
             self.tags_to_search.remove("or")
             self.tags_to_search.insert(-1, "and")

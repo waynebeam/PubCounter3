@@ -1,3 +1,15 @@
-Later: One day maybe, take all the combined screen logic, like the back button on top, box layout, etc, and make it a like "screen template" class that the other screens inherit.
+1. in the body can add a layout with buttons on the single pub screen
+    -Those can be 'add tags' and 'remove tags.'
+    -Those buttons when pressed will need to go to a new type of screen
+    -There can likely be an 'edit pub' screen that has the name with a title, and then
+        a list of their tags underneath as buttons
+    -When you click a button it will add and remove tags from a list and display them in the title
+    -The one for adding will also need a text input box at the bottom under the tags, so you can type one in.
+        or I guess that could be at the top.
+    -When you click the button at the very bottom it will either add or remove all the tags and then go back to that
+        person's solo screen.
+    -Will need to be careful, because I don't want you to be able to go back to the edit screen...or don't I?
+        If I edit Caleb, then it shows me Caleb, do I expect 'back' to take me back to editing Caleb, or the screen
+        that I started from for the edit?
 
-NextUp: Add a layout with a scroll to bottom button next to the title on the all pubs screen
+2. Add/Delete publisher buttons on home screen. But they'll be horizontal.
