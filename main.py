@@ -117,7 +117,7 @@ class SingleNameScreen(Screen):
         tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
         for tag in pub["tags"]:
-            btn = Button(text=tag, size_hint_y=None, height=50)
+            btn = Button(text=tag.title(), size_hint_y=None, height=50)
             tags_grid.add_widget(btn)
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
@@ -141,17 +141,25 @@ class NameListScreen(Screen):
         back_btn = BackButton()
         back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
+        title_layout = BoxLayout(size_hint=(1, .2))
+        title_label = Label(text=f"{len(names)} Publishers {list_type}", size_hint=(.8, 1))
+        title_layout.add_widget(title_label)
 
-        layout.add_widget(Label(text=f"{len(names)} Publishers {list_type}", size_hint=(1, .2)))
-        names_scroll_section = ScrollView(bar_width=10, bar_margin=5)
+        if len(names) >= 40:
+            scroll_bottom_btn = Button(text="Scroll down", size_hint=(.2, 1))
+            scroll_bottom_btn.bind(on_release=self.bind_scroll_bottom_button)
+            title_layout.add_widget(scroll_bottom_btn)
+
+        layout.add_widget(title_layout)
+        self.names_scroll_section = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
         names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         names_grid.bind(minimum_height=names_grid.setter("height"))
         for name in names:
             btn = Button(text=name.title(), size_hint_y=None, height=50)
             names_grid.add_widget(btn)
             btn.bind(on_release=self.bind_name_btn)
-        names_scroll_section.add_widget(names_grid)
-        layout.add_widget(names_scroll_section)
+        self.names_scroll_section.add_widget(names_grid)
+        layout.add_widget(self.names_scroll_section)
         self.add_widget(layout)
 
     def bind_name_btn(self, btn):
@@ -159,6 +167,9 @@ class NameListScreen(Screen):
 
     def back_btn_bind(self, btn):
         self.manager.go_back()
+
+    def bind_scroll_bottom_button(self, btn):
+        self.names_scroll_section.scroll_y = 0
 
 
 class AllTagsScreen(Screen):
