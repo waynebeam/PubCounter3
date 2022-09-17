@@ -181,6 +181,12 @@ class SingleNameScreen(ListScreen):
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
         self.body_scroller.add_widget(tags_grid)
+        add_remove_layout = BoxLayout(size_hint=(1,.3))
+        add_tag_btn = Button(text="Add tags (coming soon)")
+        remove_tag_btn = Button(text="Remove tags (coming soon)")
+        add_remove_layout.add_widget(add_tag_btn)
+        add_remove_layout.add_widget(remove_tag_btn)
+        self.body.add_widget(add_remove_layout)
         self.add_widget(self.layout)
 
 
