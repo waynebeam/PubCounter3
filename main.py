@@ -1,6 +1,7 @@
 import kivy
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
+from kivy.uix.widget import Widget
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
@@ -57,6 +58,7 @@ class NavigationScreenManager(ScreenManager):
 
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
+        names.sort(key=lambda entry:entry.split()[1])
         self.show_name_list_screen(names)
 
     def show_name_list_screen(self, names: [], title_decoration: str = "in all"):
@@ -100,11 +102,12 @@ class NavigationScreenManager(ScreenManager):
         self.current = "main_menu_screen"
 
     def change_screens(self, next_screen: Screen):
-        self.screen_stack.append(self.current_screen)
-        self.add_widget(next_screen)
-        self.remove_widget(self.current_screen)
-        self.transition.direction = "left"
-        self.current = next_screen.name
+        if next_screen.name != self.current:
+            self.screen_stack.append(self.current_screen)
+            self.add_widget(next_screen)
+            self.remove_widget(self.current_screen)
+            self.transition.direction = "left"
+            self.current = next_screen.name
 
     def go_back(self):
         current = self.current_screen
@@ -119,10 +122,21 @@ class ListScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout = BoxLayout(orientation="vertical")
-        navigation_bar = NavigationBar()
-        navigation_bar.back_btn.bind(on_release=self.back_btn_bind)
-        navigation_bar.home_btn.bind(on_release=self.bind_home_btn)
-        self.layout.add_widget(navigation_bar)
+        navigation_bar_top = TopNavigationBar()
+        navigation_bar_top.back_btn.bind(on_release=self.back_btn_bind)
+        self.header = BoxLayout(size_hint=(1, .2))
+        self.body = BoxLayout(orientation="vertical")
+        self.body_scroller = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
+        self.body.add_widget(self.body_scroller)
+
+        navigation_bar_bottom = BottomNavigationBar()
+        navigation_bar_bottom.home_btn.bind(on_release=self.bind_home_btn)
+        navigation_bar_bottom.tag_screen_btn.bind(on_release=self.all_tags_btn)
+        navigation_bar_bottom.all_pub_screen_btn.bind(on_release=self.all_pubs_btn)
+        self.layout.add_widget(navigation_bar_top)
+        self.layout.add_widget(self.header)
+        self.layout.add_widget(self.body)
+        self.layout.add_widget(navigation_bar_bottom)
 
     def bind_home_btn(self, btn):
         self.manager.return_to_main_menu_screen()
@@ -136,10 +150,16 @@ class ListScreen(Screen):
         self.manager.show_name_list_screen(title_str, matching_pubs)
 
     def bind_scroll_bottom_button(self, btn):
-        self.names_scroll_section.scroll_y = 0
+        self.body_scroller.scroll_y = 0
 
     def bind_name_btn(self, btn):
         self.manager.show_single_name_screen(btn.text.lower())
+
+    def all_tags_btn(self,btn):
+        self.manager.show_all_tags_screen()
+
+    def all_pubs_btn(self,btn):
+        self.manager.show_all_names_screen()
 
 
 class SingleNameScreen(ListScreen):
@@ -148,27 +168,39 @@ class SingleNameScreen(ListScreen):
         self.name = "name_screen"
 
         name_label = Label(text=pub["name"].title(), size_hint=(1, .3))
-        self.layout.add_widget(name_label)
-        tags_scroll_section = ScrollView()
-        self.layout.add_widget(tags_scroll_section)
+        self.header.add_widget(name_label)
+
         tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
         for tag in pub["tags"]:
             btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
-        tags_scroll_section.add_widget(tags_grid)
+        self.body_scroller.add_widget(tags_grid)
         self.add_widget(self.layout)
 
 
-class NavigationBar(BoxLayout):
+class TopNavigationBar(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (1, .1)
-        self.back_btn = Button(text="back", size_hint=(.8, 1))
-        self.home_btn = Button(text="home", size_hint=(.2, 1))
-        self.add_widget(self.home_btn)
+        self.back_btn = Button(text="back", size_hint=(.2, 1))
         self.add_widget(self.back_btn)
+        title = Label(text="PubCounter")
+        self.add_widget(title)
+        self.add_widget(Widget(size_hint=(.2,1)))
+
+
+class BottomNavigationBar(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (1, .1)
+        self.home_btn = Button(text="home")
+        self.add_widget(self.home_btn)
+        self.all_pub_screen_btn = Button(text="All Pubs")
+        self.tag_screen_btn = Button(text="All Tags")
+        self.add_widget(self.tag_screen_btn)
+        self.add_widget(self.all_pub_screen_btn)
 
 
 class NameListScreen(ListScreen):
@@ -176,25 +208,21 @@ class NameListScreen(ListScreen):
         super().__init__(**kwargs)
         self.name = "namelist"
 
-        title_layout = BoxLayout(size_hint=(1, .2))
         title_label = Label(text=f"{len(names)} Publishers {list_type}", size_hint=(.8, 1))
-        title_layout.add_widget(title_label)
+        self.header.add_widget(title_label)
 
         if len(names) >= 40:
             scroll_bottom_btn = Button(text="Scroll down", size_hint=(.2, 1))
             scroll_bottom_btn.bind(on_release=self.bind_scroll_bottom_button)
-            title_layout.add_widget(scroll_bottom_btn)
+            self.header.add_widget(scroll_bottom_btn)
 
-        self.layout.add_widget(title_layout)
-        self.names_scroll_section = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
         names_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         names_grid.bind(minimum_height=names_grid.setter("height"))
         for name in names:
             btn = Button(text=name.title(), size_hint_y=None, height=dp(50))
             names_grid.add_widget(btn)
             btn.bind(on_release=self.bind_name_btn)
-        self.names_scroll_section.add_widget(names_grid)
-        self.layout.add_widget(self.names_scroll_section)
+        self.body_scroller.add_widget(names_grid)
         self.add_widget(self.layout)
 
 
@@ -205,25 +233,21 @@ class AllTagsScreen(ListScreen):
         self.tags_to_search = []
         self.search_or = False
 
-        title_layout = BoxLayout(size_hint=(1, .2))
         self.title_label = Label(text=f"Choose from the {self.number_of_tags} tags", size_hint=(.8, 1))
         or_toggle_btn = Button(text="Matching ALL", size_hint=(.2, 1))
         or_toggle_btn.bind(on_release=self.bind_or_toggle_btn)
-        title_layout.add_widget(self.title_label)
-        title_layout.add_widget(or_toggle_btn)
-        self.layout.add_widget(title_layout)
-        tags_scroll_section = ScrollView()
+        self.header.add_widget(self.title_label)
+        self.header.add_widget(or_toggle_btn)
         tags_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
         for tag in tags:
             btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
-        tags_scroll_section.add_widget(tags_grid)
-        self.layout.add_widget(tags_scroll_section)
+        self.body_scroller.add_widget(tags_grid)
         self.search_btn = Button(text="Search", size_hint=(1, .2), disabled=True)
         self.search_btn.bind(on_release=self.bind_search_btn)
-        self.layout.add_widget(self.search_btn)
+        self.body.add_widget(self.search_btn)
         self.add_widget(self.layout)
 
     def bind_tag_btn(self, btn):
