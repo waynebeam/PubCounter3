@@ -131,7 +131,9 @@ class ListScreen(Screen):
 
     def bind_tag_btn(self, btn):
         tag = [btn.text]
-        self.manager.create_matching_pubs_screen(tag)
+        result, title_str, matching_pubs = self.manager.create_matching_pubs_screen(tag)
+        self.manager.show_name_list_screen(title_str, matching_pubs)
+
 
     def bind_scroll_bottom_button(self, btn):
         self.names_scroll_section.scroll_y = 0
