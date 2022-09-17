@@ -140,14 +140,20 @@ class NameListScreen(Screen):
 class AllTagsScreen(Screen):
     def __init__(self, tags: [], **kwargs):
         super().__init__(**kwargs)
+        self.number_of_tags = len(tags)
+        self.tags_to_search = []
+        self.search_or = False
         layout = BoxLayout(orientation="vertical")
         back_btn = BackButton()
         back_btn.bind(on_release=self.back_btn_bind)
         layout.add_widget(back_btn)
-        self.number_of_tags = len(tags)
-        self.title_label = Label(text=f"Choose one of the {self.number_of_tags} tags", size_hint=(1, .2))
-        self.tags_to_search = []
-        layout.add_widget(self.title_label)
+        title_layout = BoxLayout(size_hint=(1, .2))
+        self.title_label = Label(text=f"Choose from the {self.number_of_tags} tags", size_hint=(.8, 1))
+        or_toggle_btn = Button(text="Matching ALL", size_hint=(.2, 1))
+        or_toggle_btn.bind(on_release=self.bind_or_toggle_btn)
+        title_layout.add_widget(self.title_label)
+        title_layout.add_widget(or_toggle_btn)
+        layout.add_widget(title_layout)
         tags_scroll_section = ScrollView()
         tags_grid = GridLayout(cols=2, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
@@ -157,7 +163,7 @@ class AllTagsScreen(Screen):
             btn.bind(on_release=self.bind_tag_btn)
         tags_scroll_section.add_widget(tags_grid)
         layout.add_widget(tags_scroll_section)
-        self.search_btn = Button(text="Search", size_hint=(1,.2))
+        self.search_btn = Button(text="Search", size_hint=(1, .2), disabled=True)
         layout.add_widget(self.search_btn)
         self.add_widget(layout)
 
@@ -166,21 +172,55 @@ class AllTagsScreen(Screen):
             self.tags_to_search.append(btn.text)
         else:
             self.tags_to_search.remove(btn.text)
-
+            if len(self.tags_to_search) == 2:
+                if "or" in self.tags_to_search:
+                    self.tags_to_search.remove("or")
+                elif "and" in self.tags_to_search:
+                    self.tags_to_search.remove("and")
+        num_tags = len(self.tags_to_search)
+        print(num_tags)
         if self.tags_to_search:
-            self.search_btn.text = f"Search for {len(self.tags_to_search)} tags"
+            self.search_btn.disabled = False
+            if len(self.tags_to_search) > 1:
+                if self.search_or:
+                    if "or" in self.tags_to_search:
+                        self.tags_to_search.remove("or")
+                    self.tags_to_search.insert(-1, "or")
+                else:
+                    if "and" in self.tags_to_search:
+                        self.tags_to_search.remove("and")
+                    self.tags_to_search.insert(-1, "and")
+            self.search_btn.text = f"Search for {num_tags-1 if num_tags >2 else num_tags} tags"
             new_title = ""
-            for tag in self.tags_to_search:
-                new_title += f"{tag}, "
+            for i, tag in enumerate(self.tags_to_search):
+                new_title += tag
+                if i < len(self.tags_to_search) - 1:
+                    new_title += ", "
             self.title_label.text = new_title
         else:
-            self.title_label.text = f"Choose one of the {self.number_of_tags} tags"
+            self.title_label.text = f"Choose from the {self.number_of_tags} tags"
             self.search_btn.text = "Search"
-
-
+            self.search_btn.disabled = True
 
     def back_btn_bind(self, btn):
         self.manager.go_back()
+
+    def bind_or_toggle_btn(self, btn):
+        if self.search_or:
+            self.search_or = False
+            btn.text = "Matching ALL"
+        else:
+            self.search_or = True
+            btn.text = "Matching ANY"
+        if "or" in self.tags_to_search:
+            self.tags_to_search.remove("or")
+            self.tags_to_search.insert(-1, "and")
+            self.title_label.text = str.replace(self.title_label.text, "or", "and")
+        elif "and" in self.tags_to_search:
+            self.tags_to_search.remove("and")
+            self.tags_to_search.insert(-1, "or")
+            self.title_label.text = str.replace(self.title_label.text, "and", "or")
+
 
 
 if __name__ == '__main__':
