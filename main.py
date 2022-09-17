@@ -67,7 +67,6 @@ class NavigationScreenManager(ScreenManager):
         self.change_screens(screen)
 
     def create_matching_pubs_screen(self, tags: []):
-
         matching_pubs = []
         pubs = self.publishers
         if "or" in tags:
@@ -91,12 +90,14 @@ class NavigationScreenManager(ScreenManager):
     def change_screens(self, next_screen: Screen):
         self.screen_stack.append(self.current_screen)
         self.add_widget(next_screen)
+        self.remove_widget(self.current_screen)
         self.transition.direction = "left"
         self.current = next_screen.name
 
     def go_back(self):
         current = self.current_screen
         self.transition.direction = "right"
+        self.add_widget(self.screen_stack[-1])
         self.current = self.screen_stack[-1].name
         self.remove_widget(current)
         self.screen_stack.pop()
@@ -119,11 +120,16 @@ class SingleNameScreen(Screen):
         for tag in pub["tags"]:
             btn = Button(text=tag.title(), size_hint_y=None, height=50)
             tags_grid.add_widget(btn)
+            btn.bind(on_release=self.bind_tag_btn)
         tags_scroll_section.add_widget(tags_grid)
         self.add_widget(layout)
 
     def back_btn_bind(self, btn):
         self.manager.go_back()
+
+    def bind_tag_btn(self,btn):
+        tag = [btn.text]
+        self.manager.create_matching_pubs_screen(tag)
 
 
 class BackButton(Button):
