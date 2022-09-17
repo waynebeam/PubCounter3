@@ -54,6 +54,7 @@ class NavigationScreenManager(ScreenManager):
                 if tag not in all_tags:
                     all_tags.append(tag)
 
+        all_tags.sort()
         return all_tags
 
     def show_all_names_screen(self):
