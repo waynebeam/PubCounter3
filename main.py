@@ -281,7 +281,7 @@ class AddTagScreen(ListScreen):
 
     def bind_enter_new_tag(self, btn):
         new_tag = self.enter_new_tag_field.text
-        if new_tag and new_tag not in self.new_tags:
+        if new_tag and new_tag not in self.new_tags and not any(new_tag in x.text for x in self.tags_grid.children):
             new_btn = Button(text=new_tag,size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)
