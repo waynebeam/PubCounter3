@@ -12,11 +12,15 @@ from kivy.uix.boxlayout import BoxLayout
 from publisher import Publisher
 from kivy.metrics import dp
 import json
+import re
+from kivy.uix.textinput import TextInput
 # from kivy.config import Config
 # Config.set('graphics', 'width', '500')
 # Config.set('graphics', 'height', '700')
 from kivy.core.window import Window
+
 Window.size = (500, 700)
+
 
 def load_file():
     pubs = {}
@@ -50,6 +54,7 @@ class NavigationScreenManager(ScreenManager):
         self.publishers = pubs
         self.all_tags = self.find_all_tags()
         self.main_menu_screen = self.current_screen
+        self.show_add_tags_screen()
 
     def find_all_tags(self) -> []:
         all_tags = []
@@ -63,7 +68,7 @@ class NavigationScreenManager(ScreenManager):
 
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
-        names.sort(key=lambda entry:entry.split()[1])
+        names.sort(key=lambda entry: entry.split()[1])
         self.show_name_list_screen(names)
 
     def show_name_list_screen(self, names: [], title_decoration: str = "in all"):
@@ -73,6 +78,10 @@ class NavigationScreenManager(ScreenManager):
     def show_single_name_screen(self, name: str):
         pub = self.publishers[name]
         screen = SingleNameScreen(pub)
+        self.change_screens(screen)
+
+    def show_add_tags_screen(self, pub: Publisher = None):
+        screen = AddTagScreen(self.publishers["ulysses ashton"], self.all_tags)
         self.change_screens(screen)
 
     def show_all_tags_screen(self):
@@ -163,6 +172,30 @@ class BasicScreen(Screen):
     def all_pubs_btn(self, btn):
         self.manager.show_all_names_screen()
 
+
+class TopNavigationBar(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (1, .1)
+        self.back_btn = Button(text="back", size_hint=(.2, 1))
+        self.add_widget(self.back_btn)
+        title = Label(text="PubCounter")
+        self.add_widget(title)
+        self.add_widget(Widget(size_hint=(.2, 1)))
+
+
+class BottomNavigationBar(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (1, .1)
+        self.home_btn = Button(text="home")
+        self.add_widget(self.home_btn)
+        self.all_pub_screen_btn = Button(text="All Pubs")
+        self.tag_screen_btn = Button(text="All Tags")
+        self.add_widget(self.tag_screen_btn)
+        self.add_widget(self.all_pub_screen_btn)
+
+
 class ListScreen(BasicScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -185,7 +218,7 @@ class SingleNameScreen(ListScreen):
             tags_grid.add_widget(btn)
             btn.bind(on_release=self.bind_tag_btn)
         self.body_scroller.add_widget(tags_grid)
-        add_remove_layout = BoxLayout(size_hint=(1,.3))
+        add_remove_layout = BoxLayout(size_hint=(1, .3))
         add_tag_btn = Button(text="Add tags (coming soon)")
         remove_tag_btn = Button(text="Remove tags (coming soon)")
         add_remove_layout.add_widget(add_tag_btn)
@@ -194,27 +227,79 @@ class SingleNameScreen(ListScreen):
         self.add_widget(self.layout)
 
 
-class TopNavigationBar(BoxLayout):
-    def __init__(self, **kwargs):
+class AddTagScreen(ListScreen):
+    def __init__(self, pub: Publisher, all_tags: [], **kwargs):
         super().__init__(**kwargs)
-        self.size_hint = (1, .1)
-        self.back_btn = Button(text="back", size_hint=(.2, 1))
-        self.add_widget(self.back_btn)
-        title = Label(text="PubCounter")
-        self.add_widget(title)
-        self.add_widget(Widget(size_hint=(.2,1)))
+        self.name = 'add_tag_screen'
+        self.publisher = pub
+        self.new_tags = []
+        self.title_label = Label(text=f"Add tags to {pub['name'].title()}")
+        self.header.orientation = "vertical"
+        self.header.add_widget(self.title_label)
+        self.enter_new_tag_layout = BoxLayout()
+        self.enter_new_tag_field = NewTagTextInput(hint_text="Type new tag or select from below", multiline=False,
+                                                   size_hint_x=.8)
+        self.enter_new_tag_btn = Button(text="Enter", size_hint_x=.2)
+        self.enter_new_tag_field.bind(on_text_validate=self.bind_enter_new_tag)
+        self.enter_new_tag_btn.bind(on_release=self.bind_enter_new_tag)
+        self.enter_new_tag_layout.add_widget(self.enter_new_tag_field)
+        self.enter_new_tag_layout.add_widget(self.enter_new_tag_btn)
+        self.header.add_widget(self.enter_new_tag_layout)
+        self.tags_grid = GridLayout(cols=2)
+        for tag in all_tags:
+            if tag not in pub["tags"]:
+                new_tag_btn = Button(text=tag, height=dp(50))
+                self.tags_grid.add_widget(new_tag_btn)
+                new_tag_btn.bind(on_release=self.bind_add_tag_btn)
+
+        self.body_scroller.add_widget(self.tags_grid)
+        self.accept_changes_btn = Button(text="Save changes", size_hint_y=.2, disabled=True)
+        self.accept_changes_btn.bind(on_release=self.bind_accept_changes_button)
+        self.tags_to_add_label = Label(text=f"New tags: ", size_hint_y=.2)
+        self.body.add_widget(self.tags_to_add_label)
+        self.body.add_widget(self.accept_changes_btn)
+        self.add_widget(self.layout)
+
+    def bind_add_tag_btn(self, btn):
+        new_tag = btn.text.lower()
+        self.add_new_tag_to_list(new_tag)
+        self.update_tags_to_add_label()
+
+    def add_new_tag_to_list(self, new_tag):
+        if new_tag not in self.new_tags:
+            self.new_tags.append(new_tag)
+        else:
+            self.new_tags.remove(new_tag)
+
+    def bind_enter_new_tag(self, btn):
+        new_tag = self.enter_new_tag_field.text
+        if new_tag and new_tag not in self.new_tags:
+            new_btn = Button(text=new_tag)
+            self.tags_grid.add_widget(new_btn)
+            new_btn.bind(on_release=self.bind_add_tag_btn)
+            self.new_tags.append(new_tag)
+            self.update_tags_to_add_label()
+
+    def update_tags_to_add_label(self):
+        if self.new_tags:
+            self.tags_to_add_label.text = str(self.new_tags)
+            self.accept_changes_btn.disabled = False
+        else:
+            self.tags_to_add_label.text = "No new tags selected"
+            self.accept_changes_btn.disabled = True
+
+    def bind_accept_changes_button(self, btn):
+        for tag in self.new_tags:
+            self.publisher["tags"].append(tag)
+        self.manager.go_back()
 
 
-class BottomNavigationBar(BoxLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.size_hint = (1, .1)
-        self.home_btn = Button(text="home")
-        self.add_widget(self.home_btn)
-        self.all_pub_screen_btn = Button(text="All Pubs")
-        self.tag_screen_btn = Button(text="All Tags")
-        self.add_widget(self.tag_screen_btn)
-        self.add_widget(self.all_pub_screen_btn)
+class NewTagTextInput(TextInput):
+    pat = re.compile(r'[a-zA-Z]')
+
+    def insert_text(self, substring, from_undo=False):
+        if self.pat.match(substring):
+            super().insert_text(substring, from_undo=from_undo)
 
 
 class NameListScreen(ListScreen):
