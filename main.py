@@ -1,4 +1,3 @@
-import kivy
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
@@ -43,7 +42,6 @@ class PubCounter3(App):
     def build(self):
         pubs = load_file()
         self.manager = NavigationScreenManager(pubs)
-        screen = SingleNameScreen(pubs["wayne beam"])
         return self.manager
 
 
@@ -64,6 +62,9 @@ class NavigationScreenManager(ScreenManager):
 
         all_tags.sort()
         return all_tags
+
+    def update_all_tags(self):
+        self.all_tags = self.find_all_tags()
 
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
@@ -256,7 +257,7 @@ class AddTagScreen(ListScreen):
         self.tags_grid.bind(minimum_height=self.tags_grid.setter("height"))
         for tag in all_tags:
             if tag not in pub["tags"]:
-                new_tag_btn = Button(text=tag,size_hint_y=None, height=dp(50))
+                new_tag_btn = Button(text=tag.title(),size_hint_y=None, height=dp(50))
                 self.tags_grid.add_widget(new_tag_btn)
                 new_tag_btn.bind(on_release=self.bind_add_tag_btn)
 
@@ -279,10 +280,11 @@ class AddTagScreen(ListScreen):
         else:
             self.new_tags.remove(new_tag)
 
+
     def bind_enter_new_tag(self, btn):
         new_tag = self.enter_new_tag_field.text.lower()
         if new_tag and new_tag not in self.new_tags and not any(new_tag == x.text for x in self.tags_grid.children) and not any(new_tag == t for t in self.publisher["tags"]):
-            new_btn = Button(text=new_tag,size_hint_y=None, height=dp(50))
+            new_btn = Button(text=new_tag.title(),size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)
             self.new_tags.append(new_tag)
@@ -295,15 +297,22 @@ class AddTagScreen(ListScreen):
 
     def update_tags_to_add_label(self):
         if self.new_tags:
-            self.tags_to_add_label.text = str(self.new_tags)
+            new_text = "New tags: "
+            for tag in self.new_tags:
+                new_text += f"{tag.title()}, "
+            new_text = new_text[:-2]
+            self.tags_to_add_label.text = new_text
             self.accept_changes_btn.disabled = False
+            self.accept_changes_btn.text = f"Add {len(self.new_tags)} tags to {self.publisher['name'].title()}"
         else:
             self.tags_to_add_label.text = "No new tags selected"
             self.accept_changes_btn.disabled = True
+            self.accept_changes_btn.text = "Enter new tags"
 
     def bind_accept_changes_button(self, btn):
         for tag in self.new_tags:
             self.publisher["tags"].append(tag)
+        self.manager.update_all_tags()
         self.manager.go_back()
 
 
