@@ -209,14 +209,8 @@ class SingleNameScreen(ListScreen):
         self.publisher = pub
         name_label = Label(text=pub["name"].title(), size_hint=(1, .3))
         self.header.add_widget(name_label)
+        self.bind(on_pre_enter=self.setup_tag_list)
 
-        tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
-        tags_grid.bind(minimum_height=tags_grid.setter("height"))
-        for tag in pub["tags"]:
-            btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
-            tags_grid.add_widget(btn)
-            btn.bind(on_release=self.bind_tag_btn)
-        self.body_scroller.add_widget(tags_grid)
         add_remove_layout = BoxLayout(size_hint=(1, .3))
         add_tag_btn = Button(text="Add tags")
         add_tag_btn.bind(on_release=self.bind_add_tags_btn)
@@ -225,6 +219,16 @@ class SingleNameScreen(ListScreen):
         add_remove_layout.add_widget(remove_tag_btn)
         self.body.add_widget(add_remove_layout)
         self.add_widget(self.layout)
+
+    def setup_tag_list(self,target):
+        self.body_scroller.clear_widgets()
+        tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
+        tags_grid.bind(minimum_height=tags_grid.setter("height"))
+        for tag in self.publisher["tags"]:
+            btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
+            tags_grid.add_widget(btn)
+            btn.bind(on_release=self.bind_tag_btn)
+        self.body_scroller.add_widget(tags_grid)
 
     def bind_add_tags_btn(self,btn):
         self.manager.show_add_tags_screen(self.publisher)
@@ -248,11 +252,11 @@ class AddTagScreen(ListScreen):
         self.enter_new_tag_layout.add_widget(self.enter_new_tag_field)
         self.enter_new_tag_layout.add_widget(self.enter_new_tag_btn)
         self.header.add_widget(self.enter_new_tag_layout)
-        self.tags_grid = GridLayout(cols=2)
-        self.tags_grid.bind(minimum_height=self.tags_grid.setter('height'))
+        self.tags_grid = GridLayout(cols=2, size_hint_y=None)
+        self.tags_grid.bind(minimum_height=self.tags_grid.setter("height"))
         for tag in all_tags:
             if tag not in pub["tags"]:
-                new_tag_btn = Button(text=tag, height=dp(50))
+                new_tag_btn = Button(text=tag,size_hint_y=None, height=dp(50))
                 self.tags_grid.add_widget(new_tag_btn)
                 new_tag_btn.bind(on_release=self.bind_add_tag_btn)
 
@@ -278,11 +282,9 @@ class AddTagScreen(ListScreen):
     def bind_enter_new_tag(self, btn):
         new_tag = self.enter_new_tag_field.text
         if new_tag and new_tag not in self.new_tags:
-            new_btn = Button(text=new_tag)
-            self.body_scroller.remove_widget(self.tags_grid)
+            new_btn = Button(text=new_tag,size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)
-            self.body_scroller.add_widget(self.tags_grid)
             self.new_tags.append(new_tag)
             self.update_tags_to_add_label()
 
