@@ -24,7 +24,7 @@ Window.size = (500, 700)
 def load_file():
     pubs = {}
     try:
-        with open("publishers.txt") as f:
+        with open("publisherscopy.txt") as f:
             raw_data = f.read()
         raw_data = json.loads(raw_data)
         for pub in raw_data:
@@ -34,6 +34,7 @@ def load_file():
 
     except FileNotFoundError:
         return pubs
+
 
 
 class PubCounter3(App):
@@ -134,6 +135,14 @@ class NavigationScreenManager(ScreenManager):
         self.current = self.screen_stack[-1].name
         self.remove_widget(current)
         self.screen_stack.pop()
+
+    def save_file(self):
+        save_data_list = []
+        for pub in self.publishers.values():
+            save_data_list.append(pub.pub_data)
+        save_data_json = json.dumps(save_data_list)
+        with open("publisherscopy.txt", 'w') as f:
+            f.write(save_data_json)
 
 
 class BasicScreen(Screen):
@@ -322,6 +331,7 @@ class AddTagScreen(ListScreen):
         for tag in self.new_tags:
             self.publisher["tags"].append(tag)
         self.manager.update_all_tags()
+        self.manager.save_file()
         self.manager.go_back()
 
 
@@ -374,6 +384,7 @@ class RemoveTagScreen(ListScreen):
         for tag in self.tags_to_remove:
             self.publisher["tags"].remove(tag)
         self.manager.update_all_tags()
+        self.manager.save_file()
         self.manager.go_back()
 
 
