@@ -500,6 +500,7 @@ class AllTagsScreen(ListScreen):
         else:
             self.title_label.text = "No matches found"
             self.tags_to_search.clear()
+            self.search_btn.disabled = True
 
 
 if __name__ == '__main__':

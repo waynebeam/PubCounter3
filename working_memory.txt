@@ -14,3 +14,6 @@
 
 2. The basic screen is in place, so I can make other kinds of screens and put them in that shell in case they don't
     have a big scroller in the center.
+
+3. When going back through a chain of screens, it doens't always update the tags on a person, until you leave and remake that screen
+    so I may have to update on pre enter like I do with other grids
