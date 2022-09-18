@@ -280,13 +280,18 @@ class AddTagScreen(ListScreen):
             self.new_tags.remove(new_tag)
 
     def bind_enter_new_tag(self, btn):
-        new_tag = self.enter_new_tag_field.text
-        if new_tag and new_tag not in self.new_tags and not any(new_tag in x.text for x in self.tags_grid.children):
+        new_tag = self.enter_new_tag_field.text.lower()
+        if new_tag and new_tag not in self.new_tags and not any(new_tag == x.text for x in self.tags_grid.children) and not any(new_tag == t for t in self.publisher["tags"]):
             new_btn = Button(text=new_tag,size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)
             self.new_tags.append(new_tag)
             self.update_tags_to_add_label()
+            self.enter_new_tag_field.text = ""
+            self.enter_new_tag_field.hint_text = "Type new tag or select from below"
+        else:
+            self.enter_new_tag_field.text = ""
+            self.enter_new_tag_field.hint_text = "Enter a new tag"
 
     def update_tags_to_add_label(self):
         if self.new_tags:
