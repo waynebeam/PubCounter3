@@ -84,6 +84,10 @@ class NavigationScreenManager(ScreenManager):
         screen = AddTagScreen(pub, self.all_tags)
         self.change_screens(screen)
 
+    def show_remove_tags_screen(self, pub: Publisher):
+        screen = RemoveTagScreen(pub)
+        self.change_screens(screen)
+
     def show_all_tags_screen(self):
 
         screen = AllTagsScreen(self.all_tags)
@@ -215,13 +219,14 @@ class SingleNameScreen(ListScreen):
         add_remove_layout = BoxLayout(size_hint=(1, .3))
         add_tag_btn = Button(text="Add tags")
         add_tag_btn.bind(on_release=self.bind_add_tags_btn)
-        remove_tag_btn = Button(text="Remove tags (coming soon)")
+        remove_tag_btn = Button(text="Remove tags")
+        remove_tag_btn.bind(on_release=self.bind_remove_tags_btn)
         add_remove_layout.add_widget(add_tag_btn)
         add_remove_layout.add_widget(remove_tag_btn)
         self.body.add_widget(add_remove_layout)
         self.add_widget(self.layout)
 
-    def setup_tag_list(self,target):
+    def setup_tag_list(self, target):
         self.body_scroller.clear_widgets()
         tags_grid = GridLayout(cols=1, size_hint_y=None, spacing=2)
         tags_grid.bind(minimum_height=tags_grid.setter("height"))
@@ -231,8 +236,11 @@ class SingleNameScreen(ListScreen):
             btn.bind(on_release=self.bind_tag_btn)
         self.body_scroller.add_widget(tags_grid)
 
-    def bind_add_tags_btn(self,btn):
+    def bind_add_tags_btn(self, btn):
         self.manager.show_add_tags_screen(self.publisher)
+
+    def bind_remove_tags_btn(self, btn):
+        self.manager.show_remove_tags_screen(self.publisher)
 
 
 class AddTagScreen(ListScreen):
@@ -257,7 +265,7 @@ class AddTagScreen(ListScreen):
         self.tags_grid.bind(minimum_height=self.tags_grid.setter("height"))
         for tag in all_tags:
             if tag not in pub["tags"]:
-                new_tag_btn = Button(text=tag.title(),size_hint_y=None, height=dp(50))
+                new_tag_btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
                 self.tags_grid.add_widget(new_tag_btn)
                 new_tag_btn.bind(on_release=self.bind_add_tag_btn)
 
@@ -280,11 +288,12 @@ class AddTagScreen(ListScreen):
         else:
             self.new_tags.remove(new_tag)
 
-
     def bind_enter_new_tag(self, btn):
         new_tag = self.enter_new_tag_field.text.lower()
-        if new_tag and new_tag not in self.new_tags and not any(new_tag == x.text for x in self.tags_grid.children) and not any(new_tag == t for t in self.publisher["tags"]):
-            new_btn = Button(text=new_tag.title(),size_hint_y=None, height=dp(50))
+        if new_tag and new_tag not in self.new_tags and not any(
+                new_tag == x.text for x in self.tags_grid.children) and not any(
+                new_tag == t for t in self.publisher["tags"]):
+            new_btn = Button(text=new_tag.title(), size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)
             self.new_tags.append(new_tag)
@@ -312,6 +321,58 @@ class AddTagScreen(ListScreen):
     def bind_accept_changes_button(self, btn):
         for tag in self.new_tags:
             self.publisher["tags"].append(tag)
+        self.manager.update_all_tags()
+        self.manager.go_back()
+
+
+class RemoveTagScreen(ListScreen):
+    def __init__(self, pub: Publisher, **kwargs):
+        super().__init__(**kwargs)
+        self.publisher = pub
+        self.tags_to_remove = []
+        self.title_label = Label(text=f"Remove tags from {pub['name'].title()}")
+        self.header.add_widget(self.title_label)
+        self.tags_grid = GridLayout(cols=2, size_hint_y=None)
+        self.tags_grid.bind(minimum_height=self.tags_grid.setter("height"))
+        for tag in pub["tags"]:
+            new_tag_btn = Button(text=tag.title(), size_hint_y=None, height=dp(50))
+            self.tags_grid.add_widget(new_tag_btn)
+            new_tag_btn.bind(on_release=self.bind_remove_tag_btn)
+
+        self.body_scroller.add_widget(self.tags_grid)
+        self.accept_changes_btn = Button(text="Save changes", size_hint_y=.2, disabled=True)
+        self.accept_changes_btn.bind(on_release=self.bind_accept_changes_btn)
+        self.tags_to_remove_label = Label(text="Tags to remove: ", size_hint_y=.2)
+        self.body.add_widget(self.tags_to_remove_label)
+        self.body.add_widget(self.accept_changes_btn)
+        self.add_widget(self.layout)
+
+    def bind_remove_tag_btn(self, btn):
+        new_tag = btn.text.lower()
+        if new_tag not in self.tags_to_remove:
+            self.tags_to_remove.append(new_tag)
+
+        else:
+            self.tags_to_remove.remove(new_tag)
+        self.update_tags_to_remove_label()
+
+    def update_tags_to_remove_label(self):
+        if self.tags_to_remove:
+            self.tags_to_remove_label.text = str(self.tags_to_remove)
+            new_text = "Tags to remove: "
+            for tag in self.tags_to_remove:
+                new_text += f"{tag.title()}, "
+            new_text = new_text[:-2]
+            self.tags_to_remove_label.text = new_text
+            self.accept_changes_btn.disabled = False
+            self.accept_changes_btn.text = f"Remove {len(self.tags_to_remove)} tags from {self.publisher['name'].title()}"
+        else:
+            self.tags_to_remove_label.text = "Tags to remove: "
+            self.accept_changes_btn.disabled = True
+
+    def bind_accept_changes_btn(self, btn):
+        for tag in self.tags_to_remove:
+            self.publisher["tags"].remove(tag)
         self.manager.update_all_tags()
         self.manager.go_back()
 
