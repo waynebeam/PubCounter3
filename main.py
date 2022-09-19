@@ -89,6 +89,8 @@ class NavigationScreenManager(ScreenManager):
 
     def add_pub_to_list(self, pub:Publisher):
         self.publishers[pub["name"]] = pub
+        self.update_all_tags()
+        self.save_file()
 
     def remove_pub_data_from_deleted(self, pub_data):
         self.deleted_pubs.remove(pub_data)
@@ -112,6 +114,7 @@ class NavigationScreenManager(ScreenManager):
         del self.publishers[name]
         self.save_file()
         self.save_deleted_file()
+        self.update_all_tags()
         self.return_to_main_menu_screen()
 
     def is_name_duplicate(self, name):
