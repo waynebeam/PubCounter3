@@ -87,6 +87,12 @@ class NavigationScreenManager(ScreenManager):
         self.transition.direction = "left"
         self.current = screen.name
 
+    def add_pub_to_list(self, pub:Publisher):
+        self.publishers[pub["name"]] = pub
+
+    def remove_pub_data_from_deleted(self, pub_data):
+        self.deleted_pubs.remove(pub_data)
+
     def show_delete_pub_screen(self, pub: Publisher):
         screen = DeletePubScreen(pub["name"])
         self.change_screens(screen)
@@ -95,6 +101,9 @@ class NavigationScreenManager(ScreenManager):
         screen = RestoreListScreen(self.deleted_pubs)
         self.change_screens(screen)
 
+    def show_restore_confirm_screen(self, pub_data):
+        screen = RestoreConfirmScreen(pub_data)
+        self.change_screens(screen)
 
     def delete_pub(self, name: str):
         del_pub = self.publishers[name]
@@ -435,17 +444,59 @@ class ListScreen(BasicScreen):
         self.body_scroller = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
         self.body.add_widget(self.body_scroller)
 
-class RestoreListScreen(ListScreen):
-    def __init__(self,del_pubs:{}, **kwargs):
-        super().__init__(**kwargs)
-        names_grid = GridLayout(cols=1,size_hint_y=None)
-        names_grid.bind(minimum_height=names_grid.setter('height'))
 
+class RestoreListScreen(ListScreen):
+    def __init__(self, del_pubs: {}, **kwargs):
+        super().__init__(**kwargs)
+        self.name = "restore_list"
+        names_grid = GridLayout(cols=1, size_hint_y=None)
+        names_grid.bind(minimum_height=names_grid.setter('height'))
+        self.btn_pub_data_dict = {}
         for pub in del_pubs:
-            btn = Button(text=pub["name"], size_hint_y = None, height=dp(50))
+            y, m, d = pub["del_date"].split("-")
+            y = int(y)
+            m = int(m)
+            d = int(d)
+            del_date = datetime.date(y, m, d)
+            days_left = 30 - (datetime.date.today() - del_date).days
+            btn = Button(text=f"{pub['name'].title()} ({days_left} days)", size_hint_y=None, height=dp(50))
             names_grid.add_widget(btn)
+            btn.bind(on_release=self.bind_restore_btn)
+            self.btn_pub_data_dict[btn] = pub
         self.body_scroller.add_widget(names_grid)
         self.add_widget(self.layout)
+
+    def bind_restore_btn(self, btn):
+        self.manager.show_restore_confirm_screen(self.btn_pub_data_dict[btn])
+
+
+class RestoreConfirmScreen(BasicScreen):
+    def __init__(self, pub_data: {}, **kwargs):
+        super().__init__(**kwargs)
+        self.name = "restore_confirm"
+        self.pub_data = pub_data
+        title_label = Label(text=f"Restore {pub_data['name'].title()}?", font_size=dp(30))
+        self.body.add_widget(title_label)
+        confirm_cancel_layout = BoxLayout(size_hint_y=.4)
+        confirm_btn = Button(text="Confirm")
+        cancel_btn = Button(text="Cancel")
+        cancel_btn.bind(on_release=self.bind_cancel_btn)
+        confirm_btn.bind(on_release=self.bind_confirm_btn)
+        confirm_cancel_layout.add_widget(confirm_btn)
+        confirm_cancel_layout.add_widget(cancel_btn)
+        self.body.add_widget(confirm_cancel_layout)
+        self.body.add_widget(Widget(size_hint_y=.5))
+        self.add_widget(self.layout)
+
+    def bind_cancel_btn(self,btn):
+        self.manager.go_back()
+
+    def bind_confirm_btn(self,btn):
+        del(self.pub_data["del_date"])
+        new_pub = Publisher(**self.pub_data)
+        self.manager.add_pub_to_list(new_pub)
+        self.manager.remove_pub_data_from_deleted(self.pub_data)
+        self.manager.return_to_main_menu_screen()
 
 
 class SingleNameScreen(ListScreen):
