@@ -36,7 +36,6 @@ def load_file():
         return pubs
 
 
-
 class PubCounter3(App):
     manager = ObjectProperty(None)
 
@@ -54,6 +53,23 @@ class NavigationScreenManager(ScreenManager):
         self.all_tags = self.find_all_tags()
         self.main_menu_screen = self.current_screen
 
+
+    def create_new_pub(self, name: str):
+        tags = []
+        new_pub = Publisher(name, tags)
+        self.publishers[name] = new_pub
+        screen = AddTagScreen(new_pub,self.all_tags)
+        self.add_widget(screen)
+        self.remove_widget(self.current_screen)
+        self.transition.direction = "left"
+        self.current = screen.name
+
+    def is_name_duplicate(self,name):
+        if name in self.publishers:
+            return True
+        else:
+            return False
+
     def find_all_tags(self) -> []:
         all_tags = []
         for pub in self.publishers:
@@ -67,12 +83,17 @@ class NavigationScreenManager(ScreenManager):
     def update_all_tags(self):
         self.all_tags = self.find_all_tags()
 
+    def show_create_pub_screen(self):
+        screen = NewPubScreen()
+        self.change_screens(screen)
+
     def show_all_names_screen(self):
         names = [name for name in self.publishers]
         names.sort(key=lambda entry: entry.split()[1])
         self.show_name_list_screen(names)
 
     def show_name_list_screen(self, names: [], title_decoration: str = "in all"):
+        names.sort(key=lambda entry: entry.split()[1])
         screen = NameListScreen(names, title_decoration)
         self.change_screens(screen)
 
@@ -143,6 +164,83 @@ class NavigationScreenManager(ScreenManager):
         save_data_json = json.dumps(save_data_list)
         with open("publisherscopy.txt", 'w') as f:
             f.write(save_data_json)
+
+
+class NewPubScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.name = "new_pub_screen"
+        self.layout = BoxLayout(orientation="vertical")
+        self.header = BoxLayout(size_hint_y=.2)
+        self.body = BoxLayout(orientation="vertical")
+        self.footer = BoxLayout(size_hint_y=.2)
+        self.layout.add_widget(self.header)
+        self.layout.add_widget(self.body)
+        self.layout.add_widget(self.footer)
+        self.cancel_btn = Button(text="Cancel")
+        self.cancel_btn.bind(on_release=self.bind_cancel_btn)
+        self.header.add_widget(self.cancel_btn)
+        self.title_label = Label(text="What is the new publisher's name?", size_hint_y=.3)
+        self.body.add_widget(self.title_label)
+        self.name_input = NameTextInput(multiline=False, size_hint_y=.3, halign="center", font_size=dp(30))
+        self.name_input.bind(text=self.bind_name_input_field)
+        self.body.add_widget(self.name_input)
+        self.create_pub_btn = Button(disabled=True, text="Create", size_hint_y=.3)
+        self.create_pub_btn.bind(on_release=self.bind_create_btn)
+        self.confirm_layout = BoxLayout()
+        self.confirm_btn = Button(text="Confirm?")
+        self.clear_btn = Button(text="Clear")
+        self.confirm_btn.bind(on_release=self.bind_confirm_btn)
+        self.clear_btn.bind(on_release=self.bind_clear_btn)
+        self.body.add_widget(self.create_pub_btn)
+        self.body.add_widget(self.confirm_layout)
+
+        self.body.add_widget(Widget())
+        self.add_widget(self.layout)
+
+    def bind_name_input_field(self, field, text):
+        self.create_pub_btn.text = f"Create new record for {text.title()}?"
+        if self.is_name_valid(text):
+            self.create_pub_btn.disabled = False
+        else:
+            self.create_pub_btn.disabled = True
+
+    def is_name_valid(self, name_input):
+        pat = re.compile(r"\w+\s\w*'?\w+$")
+        if pat.match(name_input):
+            if not self.manager.is_name_duplicate(name_input.lower()):
+                return True
+
+        return False
+
+    def bind_create_btn(self, btn):
+        self.create_pub_btn.disabled = True
+        self.name_input.disabled = True
+        self.confirm_layout.add_widget(self.confirm_btn)
+        self.confirm_layout.add_widget(self.clear_btn)
+        self.confirm_btn.text = f"Confirm {self.name_input.text.title()}?"
+
+    def bind_clear_btn(self,btn):
+        self.create_pub_btn.disabled = False
+        self.name_input.disabled = False
+        self.name_input.text = ""
+        self.name_input.focus = True
+        self.confirm_layout.remove_widget(self.confirm_btn)
+        self.confirm_layout.remove_widget(self.clear_btn)
+
+    def bind_confirm_btn(self,btn):
+        self.manager.create_new_pub(self.name_input.text.lower())
+
+    def bind_cancel_btn(self, btn):
+        self.manager.return_to_main_menu_screen()
+
+
+class NameTextInput(TextInput):
+    pat = re.compile(r"^\w+['\w]*\s?\w*['\w]*$")
+
+    def insert_text(self, substring, from_undo=False):
+        if self.pat.match(self.text + substring):
+            super().insert_text(substring, from_undo=from_undo)
 
 
 class BasicScreen(Screen):
@@ -301,7 +399,7 @@ class AddTagScreen(ListScreen):
         new_tag = self.enter_new_tag_field.text.lower()
         if new_tag and new_tag not in self.new_tags and not any(
                 new_tag == x.text for x in self.tags_grid.children) and not any(
-                new_tag == t for t in self.publisher["tags"]):
+            new_tag == t for t in self.publisher["tags"]):
             new_btn = Button(text=new_tag.title(), size_hint_y=None, height=dp(50))
             self.tags_grid.add_widget(new_btn)
             new_btn.bind(on_release=self.bind_add_tag_btn)

@@ -8,7 +8,7 @@ class Publisher:
             self.pub_data["dob"] = dob
 
     def __repr__(self):
-        name = '\n' + self["name"].title() +'\n'
+        name = '\n' + self["name"].title() + '\n'
         tags = ",\n".join(self.pub_data["tags"])
         dob = ""
         if dob:
