@@ -53,18 +53,26 @@ class NavigationScreenManager(ScreenManager):
         self.all_tags = self.find_all_tags()
         self.main_menu_screen = self.current_screen
 
-
     def create_new_pub(self, name: str):
         tags = []
         new_pub = Publisher(name, tags)
         self.publishers[name] = new_pub
-        screen = AddTagScreen(new_pub,self.all_tags)
+        screen = AddTagScreen(new_pub, self.all_tags)
         self.add_widget(screen)
         self.remove_widget(self.current_screen)
         self.transition.direction = "left"
         self.current = screen.name
 
-    def is_name_duplicate(self,name):
+    def show_delete_pub_screen(self, pub: Publisher):
+        screen = DeletePubScreen(pub["name"])
+        self.change_screens(screen)
+
+    def delete_pub(self, name:str):
+        del self.publishers[name]
+        self.save_file()
+        self.return_to_main_menu_screen()
+
+    def is_name_duplicate(self, name):
         if name in self.publishers:
             return True
         else:
@@ -220,7 +228,7 @@ class NewPubScreen(Screen):
         self.confirm_layout.add_widget(self.clear_btn)
         self.confirm_btn.text = f"Confirm {self.name_input.text.title()}?"
 
-    def bind_clear_btn(self,btn):
+    def bind_clear_btn(self, btn):
         self.create_pub_btn.disabled = False
         self.name_input.disabled = False
         self.name_input.text = ""
@@ -228,7 +236,7 @@ class NewPubScreen(Screen):
         self.confirm_layout.remove_widget(self.confirm_btn)
         self.confirm_layout.remove_widget(self.clear_btn)
 
-    def bind_confirm_btn(self,btn):
+    def bind_confirm_btn(self, btn):
         self.manager.create_new_pub(self.name_input.text.lower())
 
     def bind_cancel_btn(self, btn):
@@ -241,6 +249,60 @@ class NameTextInput(TextInput):
     def insert_text(self, substring, from_undo=False):
         if self.pat.match(self.text + substring):
             super().insert_text(substring, from_undo=from_undo)
+
+
+class DeletePubScreen(Screen):
+    def __init__(self, name: str, **kwargs):
+        super().__init__(**kwargs)
+        self.name = "delete_pub_screen"
+        self.pub_name = name
+        self.layout = BoxLayout(orientation="vertical")
+        self.header = BoxLayout(size_hint_y=.2)
+        self.body = BoxLayout(orientation="vertical")
+        self.footer = BoxLayout(size_hint_y=.2)
+        self.layout.add_widget(self.header)
+        self.layout.add_widget(self.body)
+        self.layout.add_widget(self.footer)
+        self.header_label = Label(text="Publisher Deletion")
+        self.header.add_widget(self.header_label)
+        self.title_label = Label(text=f"You are about to delete {name.upper()}.\nAre you sure?", size_hint_y=.3)
+        self.body.add_widget(self.title_label)
+        self.confirm_layout = BoxLayout(size_hint_y=.5)
+        self.body.add_widget(self.confirm_layout)
+        self.confirm_btn = Button(text=f"Yes. Delete {name.title()}.")
+        self.confirm_btn.bind(on_release=self.bind_confirm_btn)
+        self.clear_btn = Button(text="No, nevermind.")
+        self.clear_btn.bind(on_release=self.back_btn_bind)
+        self.confirm_layout.add_widget(self.confirm_btn)
+        self.confirm_layout.add_widget(self.clear_btn)
+        self.final_confirm_layout = BoxLayout(size_hint_y=.3, disabled=True)
+        self.final_confirm_field = TextInput(halign="center", font_size=dp(20), multiline=False)
+        self.final_confirm_label = Label(halign="center")
+        self.final_confirm_btn = Button(text="Enter", size_hint_x=.2)
+        self.final_confirm_btn.bind(on_release=self.bind_final_confirm_btn)
+        self.final_confirm_field.bind(on_text_validate=self.bind_final_confirm_btn)
+        self.final_confirm_layout.add_widget(self.final_confirm_label)
+        self.final_confirm_layout.add_widget(self.final_confirm_field)
+        self.final_confirm_layout.add_widget(self.final_confirm_btn)
+        self.body.add_widget(self.final_confirm_layout)
+        self.body.add_widget(Widget())
+        self.add_widget(self.layout)
+
+    def bind_cancel_btn(self, btn):
+        self.manager.return_to_main_menu_screen()
+
+    def back_btn_bind(self, btn):
+        self.manager.go_back()
+
+    def bind_confirm_btn(self,btn):
+        self.confirm_btn.disabled = True
+        self.final_confirm_layout.disabled = False
+        self.final_confirm_field.hint_text = self.pub_name.title()
+        self.final_confirm_label.text = "Type name to confirm"
+
+    def bind_final_confirm_btn(self,btn):
+        if self.final_confirm_field.text == self.pub_name.title():
+            self.manager.delete_pub(self.pub_name)
 
 
 class BasicScreen(Screen):
@@ -328,8 +390,11 @@ class SingleNameScreen(ListScreen):
         add_tag_btn.bind(on_release=self.bind_add_tags_btn)
         remove_tag_btn = Button(text="Remove tags")
         remove_tag_btn.bind(on_release=self.bind_remove_tags_btn)
+        delete_pub_btn = Button(text="Delete\nRecord", size_hint_x=.4)
+        delete_pub_btn.bind(on_release=self.bind_delete_pub_btn)
         add_remove_layout.add_widget(add_tag_btn)
         add_remove_layout.add_widget(remove_tag_btn)
+        add_remove_layout.add_widget(delete_pub_btn)
         self.body.add_widget(add_remove_layout)
         self.add_widget(self.layout)
 
@@ -348,6 +413,9 @@ class SingleNameScreen(ListScreen):
 
     def bind_remove_tags_btn(self, btn):
         self.manager.show_remove_tags_screen(self.publisher)
+
+    def bind_delete_pub_btn(self, btn):
+        self.manager.show_delete_pub_screen(self.publisher)
 
 
 class AddTagScreen(ListScreen):
