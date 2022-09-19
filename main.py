@@ -761,8 +761,10 @@ class AllTagsScreen(ListScreen):
             new_title = ""
             for i, tag in enumerate(self.tags_to_search):
                 new_title += tag
-                if i < len(self.tags_to_search) - 1:
+                if i < len(self.tags_to_search) - 2:
                     new_title += ", "
+                else:
+                    new_title += " "
             self.title_label.text = new_title
         else:
             self.title_label.text = f"Choose from the {self.number_of_tags} tags"
