@@ -1,5 +1,5 @@
 class Publisher:
-    def __init__(self, name: str, tags: [], dob: str = None):
+    def __init__(self, name: str, tags: [] ,dob: str = None):
         self.pub_data = {
             "name": name,
             "tags": tags

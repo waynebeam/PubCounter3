@@ -12,6 +12,7 @@ from publisher import Publisher
 from kivy.metrics import dp
 import json
 import re
+import datetime
 from kivy.uix.textinput import TextInput
 # from kivy.config import Config
 # Config.set('graphics', 'width', '500')
@@ -36,6 +37,27 @@ def load_file():
         return pubs
 
 
+def load_deleted_file():
+    del_pubs = {}
+    today = datetime.date.today()
+    try:
+        with open("recently_deleted.txt") as r:
+            raw_data = r.read()
+        raw_data = json.loads(raw_data)
+        for k, v in raw_data.items():
+            y, m, d = v.split("-")
+            y = int(y)
+            m = int(m)
+            d = int(d)
+            del_date = datetime.date(y, m, d)
+            if (today - del_date).days <= 30:
+                del_pubs[k] = v
+        return del_pubs
+
+    except FileNotFoundError:
+        return del_pubs
+
+
 class PubCounter3(App):
     manager = ObjectProperty(None)
 
@@ -50,6 +72,8 @@ class NavigationScreenManager(ScreenManager):
         super().__init__(**kwargs)
         self.screen_stack = []
         self.publishers = pubs
+        self.deleted_pubs = load_deleted_file()
+        self.save_deleted_file()
         self.all_tags = self.find_all_tags()
         self.main_menu_screen = self.current_screen
 
@@ -67,9 +91,12 @@ class NavigationScreenManager(ScreenManager):
         screen = DeletePubScreen(pub["name"])
         self.change_screens(screen)
 
-    def delete_pub(self, name:str):
+    def delete_pub(self, name: str):
+        del_pub = self.publishers[name]
+        self.deleted_pubs[str(del_pub.pub_data)] = str(datetime.date.today())
         del self.publishers[name]
         self.save_file()
+        self.save_deleted_file()
         self.return_to_main_menu_screen()
 
     def is_name_duplicate(self, name):
@@ -172,6 +199,11 @@ class NavigationScreenManager(ScreenManager):
         save_data_json = json.dumps(save_data_list)
         with open("publisherscopy.txt", 'w') as f:
             f.write(save_data_json)
+
+    def save_deleted_file(self):
+        save_deleted_data_json = json.dumps(self.deleted_pubs)
+        with open("recently_deleted.txt", 'w') as f:
+            f.write(save_deleted_data_json)
 
 
 class NewPubScreen(Screen):
@@ -294,13 +326,13 @@ class DeletePubScreen(Screen):
     def back_btn_bind(self, btn):
         self.manager.go_back()
 
-    def bind_confirm_btn(self,btn):
+    def bind_confirm_btn(self, btn):
         self.confirm_btn.disabled = True
         self.final_confirm_layout.disabled = False
         self.final_confirm_field.hint_text = self.pub_name.title()
         self.final_confirm_label.text = "Type name to confirm"
 
-    def bind_final_confirm_btn(self,btn):
+    def bind_final_confirm_btn(self, btn):
         if self.final_confirm_field.text == self.pub_name.title():
             self.manager.delete_pub(self.pub_name)
 
