@@ -38,20 +38,20 @@ def load_file():
 
 
 def load_deleted_file():
-    del_pubs = {}
+    del_pubs = []
     today = datetime.date.today()
     try:
         with open("recently_deleted.txt") as r:
             raw_data = r.read()
         raw_data = json.loads(raw_data)
-        for k, v in raw_data.items():
-            y, m, d = v.split("-")
+        for pub in raw_data:
+            y, m, d = pub["del_date"].split("-")
             y = int(y)
             m = int(m)
             d = int(d)
             del_date = datetime.date(y, m, d)
             if (today - del_date).days <= 30:
-                del_pubs[k] = v
+                del_pubs.append(pub)
         return del_pubs
 
     except FileNotFoundError:
@@ -91,9 +91,15 @@ class NavigationScreenManager(ScreenManager):
         screen = DeletePubScreen(pub["name"])
         self.change_screens(screen)
 
+    def show_restore_list_screen(self):
+        screen = RestoreListScreen(self.deleted_pubs)
+        self.change_screens(screen)
+
+
     def delete_pub(self, name: str):
         del_pub = self.publishers[name]
-        self.deleted_pubs[str(del_pub.pub_data)] = str(datetime.date.today())
+        del_pub.pub_data["del_date"] = str(datetime.date.today())
+        self.deleted_pubs.append(del_pub.pub_data)
         del self.publishers[name]
         self.save_file()
         self.save_deleted_file()
@@ -201,7 +207,10 @@ class NavigationScreenManager(ScreenManager):
             f.write(save_data_json)
 
     def save_deleted_file(self):
-        save_deleted_data_json = json.dumps(self.deleted_pubs)
+        del_data = []
+        for pub_data in self.deleted_pubs:
+            del_data.append(pub_data)
+        save_deleted_data_json = json.dumps(del_data)
         with open("recently_deleted.txt", 'w') as f:
             f.write(save_deleted_data_json)
 
@@ -248,7 +257,7 @@ class NewPubScreen(Screen):
             self.restore_deleted_btn.disabled = False
 
     def bind_restore_btn(self, btn):
-        pass
+        self.manager.show_restore_list_screen()
 
     def bind_name_input_field(self, field, text):
         self.create_pub_btn.text = f"Create new record for {text.title()}?"
@@ -425,6 +434,18 @@ class ListScreen(BasicScreen):
         super().__init__(**kwargs)
         self.body_scroller = ScrollView(bar_width=10, bar_margin=5, effect_cls="ScrollEffect")
         self.body.add_widget(self.body_scroller)
+
+class RestoreListScreen(ListScreen):
+    def __init__(self,del_pubs:{}, **kwargs):
+        super().__init__(**kwargs)
+        names_grid = GridLayout(cols=1,size_hint_y=None)
+        names_grid.bind(minimum_height=names_grid.setter('height'))
+
+        for pub in del_pubs:
+            btn = Button(text=pub["name"], size_hint_y = None, height=dp(50))
+            names_grid.add_widget(btn)
+        self.body_scroller.add_widget(names_grid)
+        self.add_widget(self.layout)
 
 
 class SingleNameScreen(ListScreen):
