@@ -224,6 +224,7 @@ class NewPubScreen(Screen):
         self.body.add_widget(self.title_label)
         self.name_input = NameTextInput(multiline=False, size_hint_y=.3, halign="center", font_size=dp(30))
         self.name_input.bind(text=self.bind_name_input_field)
+        self.name_input.bind(on_text_validate=self.bind_validate_name_field)
         self.body.add_widget(self.name_input)
         self.create_pub_btn = Button(disabled=True, text="Create", size_hint_y=.3)
         self.create_pub_btn.bind(on_release=self.bind_create_btn)
@@ -253,7 +254,14 @@ class NewPubScreen(Screen):
 
         return False
 
+    def bind_validate_name_field(self, obj):
+        if self.is_name_valid(obj.text):
+            self.move_to_confirm()
+
     def bind_create_btn(self, btn):
+        self.move_to_confirm()
+
+    def move_to_confirm(self):
         self.create_pub_btn.disabled = True
         self.name_input.disabled = True
         self.confirm_layout.add_widget(self.confirm_btn)
