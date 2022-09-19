@@ -237,7 +237,18 @@ class NewPubScreen(Screen):
         self.body.add_widget(self.confirm_layout)
 
         self.body.add_widget(Widget())
+        self.restore_deleted_btn = Button(text="Restore recently deleted", disabled=True)
+        self.restore_deleted_btn.bind(on_release=self.bind_restore_btn)
+        self.footer.add_widget(self.restore_deleted_btn)
         self.add_widget(self.layout)
+        self.bind(on_enter=self.bind_on_enter)
+
+    def bind_on_enter(self, obj):
+        if self.manager.deleted_pubs:
+            self.restore_deleted_btn.disabled = False
+
+    def bind_restore_btn(self, btn):
+        pass
 
     def bind_name_input_field(self, field, text):
         self.create_pub_btn.text = f"Create new record for {text.title()}?"
