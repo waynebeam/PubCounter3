@@ -1,9 +1,8 @@
 class Publisher:
-    def __init__(self, name: str, tags: [],date: str =None ,dob: str = None):
+    def __init__(self, name: str, tags: [], dob: str = None):
         self.pub_data = {
             "name": name,
-            "tags": tags,
-            "date": date
+            "tags": tags
         }
         if dob:
             self.pub_data["dob"] = dob
